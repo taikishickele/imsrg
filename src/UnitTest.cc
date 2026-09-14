@@ -12,6 +12,7 @@
 #include "version.hh"
 #include "ReferenceImplementations.hh" // for commutators
 #include "IMSRGSolver.hh"              // for Perturbative Triples
+#include "Generator.hh"
 
 #include <omp.h>
 
@@ -3815,14 +3816,14 @@ bool UnitTest::Mscheme_Test_comm332_pphhss(const Operator &X, const Operator &Y)
   Operator Z_J_old(Y);
   Z_J.SetHermitian();
   Z_J.Erase();
-  Z_J_old.SetHermitian();
-  Z_J_old.Erase();
+//  Z_J_old.SetHermitian();
+//  Z_J_old.Erase();
 
   //  Z_J.modelspace->SetOccNat3Cut(1e-5);
   //  Z_J.modelspace->SetdE3max(1);
 
   //  Commutator::comm332_pphhss_debug( X, Y, Z_J);
-  Commutator::comm332_pphhss_debug(X, Y, Z_J_old);
+//  Commutator::comm332_pphhss_debug(X, Y, Z_J_old);
   //  Z_J.Erase();
   Commutator::comm332_pphhss(X, Y, Z_J);
 
@@ -3962,7 +3963,7 @@ bool UnitTest::Mscheme_Test_comm332_pphhss(const Operator &X, const Operator &Y)
                 } // for a
 
                 double ZJ_ijkl = GetMschemeMatrixElement_2b(Z_J, i, mi, j, mj, k, mk, l, ml);
-                double ZJ_old_ijkl = GetMschemeMatrixElement_2b(Z_J_old, i, mi, j, mj, k, mk, l, ml);
+//                double ZJ_old_ijkl = GetMschemeMatrixElement_2b(Z_J_old, i, mi, j, mj, k, mk, l, ml);
                 double err = Zm_ijkl - ZJ_ijkl;
                 //             if (std::abs(ZJ_ijkl-ZJ_old_ijkl)>1e-6)
                 if (std::abs(err) > 1e-6)
@@ -3970,8 +3971,8 @@ bool UnitTest::Mscheme_Test_comm332_pphhss(const Operator &X, const Operator &Y)
                   std::cout << "Trouble in " << __func__ << "  i,j,k,l = " << i << " " << j << " " << k << " " << l
                             << " {m} = " << mi << " " << mj << " " << mk << " " << ml
                             //                         << "   Zm_ijkl = " << Zm_ijkl << "   ZJ_ijkl = " << ZJ_ijkl << "   err = " << err << std::endl;
-                            << "   Zm_ijkl = " << Zm_ijkl << "   ZJ_ijkl = " << ZJ_ijkl << " ZJ_old_ijkl " << ZJ_old_ijkl << "   err = " << err
-                            << "  J err = " << ZJ_ijkl - ZJ_old_ijkl << std::endl;
+                            << "   Zm_ijkl = " << Zm_ijkl << "   ZJ_ijkl = " << ZJ_ijkl  << "   err = " << err
+                            <<  std::endl;
                 }
                 summed_error += err * err;
                 sum_m += Zm_ijkl * Zm_ijkl;
@@ -6018,15 +6019,28 @@ bool UnitTest::TestFactorizedDoubleCommutators( Operator& eta, Operator& H )
   int tz = eta.GetTRank() + H.GetTRank();
   int parity = (eta.GetParity() + H.GetParity())%2 ;
   int particle_rank = 2;
-  
+  int hEta = eta.IsHermitian() ? 1 : -1;
+  int hH = H.IsHermitian() ? 1 : -1;
+  int hZ = -hEta * hH;
 
 //  Operator eta = RandomOp(*modelspace, jrank, tz, parity, particle_rank, -1);
 //  Operator H = RandomOp(*modelspace, jrank, tz, parity, particle_rank, +1);
   Operator OpOut_direct(*modelspace, jrank, tz, parity, 3);
   Operator OpOut_factorized(*modelspace, jrank, tz, parity, 2);
+  if ( hZ < 0 )
+  {
+    OpOut_direct.SetAntiHermitian();
+    OpOut_factorized.SetAntiHermitian();
+  }
   OpOut_direct.ThreeBody.SetMode("pn");
-  OpOut_direct.MakeNotReduced();
-  OpOut_factorized.MakeNotReduced();
+  if (OpOut_direct.IsReduced() )
+  {
+     OpOut_direct.MakeNotReduced();
+  }
+  if (OpOut_factorized.IsReduced() )
+  {
+     OpOut_factorized.MakeNotReduced();
+  }
 
   if ( eta.IsReduced() or H.IsReduced() or OpOut_direct.IsReduced() or OpOut_factorized.IsReduced())
   {
@@ -6049,11 +6063,12 @@ bool UnitTest::TestFactorizedDoubleCommutators( Operator& eta, Operator& H )
 
   Commutator::FactorizedDoubleCommutator::comm223_231(eta, H, OpOut_factorized);
 //  Commutator::FactorizedDoubleCommutator::SetUse_1b_Intermediates(true);
+//  Commutator::FactorizedDoubleCommutator::SetUse_2b_Intermediates(true);
   Commutator::FactorizedDoubleCommutator::comm223_232(eta, H, OpOut_factorized);
 
 //  ReferenceImplementations::comm223_231_BruteForce(eta, H, OpOut_factorized);
-//  ReferenceImplementations::comm223_232_BruteForce(eta, H, OpOut_factorized);
-//  OpOut_factorized.EraseOneBody();
+////  ReferenceImplementations::comm223_232_BruteForce(eta, H, OpOut_factorized);
+//////  OpOut_factorized.EraseOneBody();
 //  ReferenceImplementations::comm223_231_fI(eta, H, OpOut_factorized);
 //  ReferenceImplementations::comm223_231_fII(eta, H, OpOut_factorized);
 //  ReferenceImplementations::comm223_231_fIIIa(eta, H, OpOut_factorized);
@@ -8493,6 +8508,96 @@ bool UnitTest::Mscheme_Test_comm333_pph_hhpst(const Operator &X, const Operator 
   std::cout << "   " << __func__ << "  sum_m, sum_J = " << sum_m << " " << sum_J
             << "    summed error = " << summed_error << "  => " << passfail << std::endl;
   return passed;
+}
+
+
+
+
+bool UnitTest::Test3BGenerator( Operator& H, Operator& Hdenom)
+{
+
+   bool pass = true;
+   Operator EtaOpt(H);
+   EtaOpt.SetAntiHermitian();
+   
+   Generator gen;
+   gen.SetType("shell-model");
+   gen.SetDenominatorPartitioning("Moller-Plesset");
+   gen.UpdateGeneral(H,Hdenom,EtaOpt);
+
+   /////////   
+    for (auto &it : H.ThreeBody.Get_ch_start())
+    {
+      size_t ch3bra = it.first.ch_bra;
+      size_t ch3ket = it.first.ch_ket;
+      ThreeBodyChannel &Tbc_bra = H.modelspace->GetThreeBodyChannel(ch3bra);
+      ThreeBodyChannel &Tbc_ket = H.modelspace->GetThreeBodyChannel(ch3ket);
+      size_t nbras = Tbc_bra.GetNumberKets();
+      size_t nkets = Tbc_ket.GetNumberKets();
+      for (size_t ibra = 0; ibra < nbras; ibra++)
+      {
+
+      Ket3& bra = Tbc_bra.GetKet(ibra);
+
+//      if ( ch3bra==ch3ket and (  (bra.op->cvq==0) or (bra.oq->cvq==0) or (bra.oR->cvq==0) ) ) continue; //cvq==0 means core orbit
+
+
+//      double d_ea = std::abs( 2*bra.op->n + bra.op->l - e_fermi[bra.op->tz2]);
+//      double d_eb = std::abs( 2*bra.oq->n + bra.oq->l - e_fermi[bra.oq->tz2]);
+//      double d_ec = std::abs( 2*bra.oR->n + bra.oR->l - e_fermi[bra.oR->tz2]);
+//      double occnat_a = bra.op->occ_nat;
+//      double occnat_b = bra.oq->occ_nat;
+//      double occnat_c = bra.oR->occ_nat;
+//      if ( d_ea + d_eb + d_ec > H->modelspace->GetdE3max() ) continue;
+//      if ( (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_c*(1-occnat_c) ) < H->modelspace->GetOccNat3Cut() ) continue ;
+      size_t a = bra.p;
+      size_t b = bra.q;
+      size_t c = bra.r;
+
+      for (size_t iket=0; iket<nkets; iket++)
+      {
+         Ket3& ket = Tbc_ket.GetKet(iket);
+         // off-diagonal :  ppp|ccc , ppp|ccv , ppp|cvv , qpp|vvv
+         if ( not ( ( (bra.op->cvq>0) and (bra.oq->cvq>0) and (bra.oR->cvq>0) and (ket.op->cvq<2) and (ket.oq->cvq<2) and (ket.oR->cvq<2)  ) // cvq>0 means v or q. cvq<2 means c or v
+                 or ( (ket.op->cvq>0) and (ket.oq->cvq>0) and (ket.oR->cvq>0) and (bra.op->cvq<2) and (bra.oq->cvq<2) and (bra.oR->cvq<2)  )
+                  ) ) continue;
+         if (  (bra.op->cvq==1) and (bra.oq->cvq==1) and (bra.oR->cvq==1) and (ket.op->cvq==1) and (ket.oq->cvq==1) and (ket.oR->cvq==1) ) continue;// no vvvvvv
+                 
+//         if ( not (  (ket.op->cvq==0) and (ket.oq->cvq==0) and (ket.oR->cvq==0) ) ) continue; //cvq==0 means core orbit
+//         double d_ei = std::abs( 2*ket.op->n + ket.op->l - e_fermi[ket.op->tz2]);
+//         double d_ej = std::abs( 2*ket.oq->n + ket.oq->l - e_fermi[ket.oq->tz2]);
+//         double d_ek = std::abs( 2*ket.oR->n + ket.oR->l - e_fermi[ket.oR->tz2]);
+//         double occnat_i = ket.op->occ_nat;
+//         double occnat_j = ket.oq->occ_nat;
+//         double occnat_k = ket.oR->occ_nat;
+//         if ( d_ei + d_ej + d_ek > H->modelspace->GetdE3max() ) continue;
+//         if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_k*(1-occnat_k) ) < H->modelspace->GetOccNat3Cut() ) continue ;
+         size_t i = ket.p;
+         size_t j = ket.q;
+         size_t k = ket.r;
+
+         double denominator = gen.Get3bDenominator( a,b,c, i,j,k ) ;
+
+         double ME_od = H.ThreeBody.GetME_pn_ch(ch3bra,ch3ket,ibra,iket );
+         double eta =   ME_od / denominator;
+
+         double eta_opt = EtaOpt.ThreeBody.GetME_pn_ch( ch3bra,ch3ket,ibra,iket); // hermitian conjugate automatically gets added
+
+         double diff = eta-eta_opt;
+         if (std::abs(diff)>1e-9)
+         {
+            std::cout << __func__ << " abcijk " << a << " " << b << " " << c << " " << i << " " << j << " " << k << " "
+                      << "ME_od " << ME_od << "   denom " << denominator << "  eta " << eta << "   eta_opt " << eta_opt << "    diff " << diff << std::endl;
+            pass = false;
+         }
+         
+      }// for iket
+
+    }// for ibra
+    }// for it ch_start
+
+   ////////
+   return pass;
 }
 
 

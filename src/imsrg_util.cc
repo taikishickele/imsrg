@@ -1926,7 +1926,7 @@ Operator RSquaredOp(ModelSpace& modelspace)
  {
    Operator Rp2Op(modelspace,0,0,0,2);
 
-   std::cout << __func__ << " begin" << std::endl;
+//   std::cout << __func__ << " begin" << std::endl;
    int nchan = modelspace.GetNumberTwoBodyChannels();
    if (option!="matter" and option!="proton" and option!="neutron") std::cout << "!!! WARNING. " << __func__ << "  BAD OPTION "  << option << std::endl;
    modelspace.PreCalculateMoshinsky();
@@ -2200,7 +2200,8 @@ Operator J2Op(ModelSpace &modelspace)
    Operator T2 = Operator(modelspace,0,0,0,2);
    T2.OneBody.diag().fill(0.75);
 
-   for (int ch=0; ch<T2.nChannels; ++ch)
+   int nch = modelspace.GetNumberTwoBodyChannels();
+   for (int ch=0; ch<nch; ch++)
    {
      TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
      arma::mat& TB = T2.TwoBody.GetMatrix(ch);
@@ -2952,6 +2953,7 @@ Operator J2Op(ModelSpace &modelspace)
   {
     Operator Fermi(modelspace,0,1,0,2);
     Fermi.SetHermitian();
+    Fermi.MakeReduced();
     int norbits = modelspace.GetNumberOrbits();
 //    for (int i=0; i<norbits; ++i)
     for ( auto i : modelspace.proton_orbits )

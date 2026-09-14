@@ -402,7 +402,10 @@ target_link_libraries(
     PRIVATE
     PhysicalConstants
     OpenMP::OpenMP_CXX
+    Commutator
 )
+
+
 
 add_library(
     RPA OBJECT
@@ -530,6 +533,9 @@ if(IMSRG_BUILD_PYTHON_BINDINGS)
     )
     set_target_properties(pyIMSRG PROPERTIES SUFFIX ".so")
     set_target_properties(pyIMSRG PROPERTIES POSITION_INDEPENDENT_CODE ON)
+    add_custom_command(TARGET pyIMSRG PRE_LINK
+		       COMMAND ${CMAKE_COMMAND} -E remove -f $<TARGET_FILE:pyIMSRG>
+                       COMMENT "Unlinking old shared library to prevent SIGBUS on running jobs" )
 endif()
 
 # Install imsrg executable
