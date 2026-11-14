@@ -333,8 +333,6 @@ namespace Commutator
     Operator Z(ms, z_Jrank, z_Trank, z_parity, z_particlerank);
 
 
-    if (Z.IsReduced())
-       Z.MakeNotReduced();
 
     if ((X.IsHermitian() and Y.IsHermitian()) or (X.IsAntiHermitian() and Y.IsAntiHermitian()))
       Z.SetAntiHermitian();
@@ -345,6 +343,9 @@ namespace Commutator
 
     if ( z_particlerank>2)
        Z.ThreeBody.SetMode("pn");
+
+    if (Z.IsReduced())
+       Z.MakeNotReduced();
 
     bool save_single_thread = single_thread;
 
@@ -1853,6 +1854,7 @@ namespace Commutator
     // Z and Y are reduced, while X is not reduced.
     if (not(X.GetParity() == 0 and Y.GetParity() == 0 and Z.GetParity() == 0 and X.GetTRank() == 0 and Y.GetTRank() == 0 and Z.GetTRank() == 0))
     {
+      bool z_was_reduced = Z.IsReduced();
       if (X.GetParity() == 0 and X.GetTRank() == 0)
       {
         Operator Xnred = X;
@@ -1891,7 +1893,11 @@ namespace Commutator
                   << "  I quit." << std::endl;
         std::exit(EXIT_FAILURE);
       }
-      Z.MakeNotReduced();
+      if (not z_was_reduced)
+      {
+//         std::cout << "In " << __func__ << " calling Z.MakeNotReduced " << std::endl;
+         Z.MakeNotReduced();
+      }
       // Z.PrintTwoBody();
       return;
     }

@@ -13,8 +13,10 @@
 #include "ReferenceImplementations.hh" // for commutators
 #include "IMSRGSolver.hh"              // for Perturbative Triples
 #include "Generator.hh"
+#include "HFMBPT.hh"
 
 #include <omp.h>
+#include <iomanip> // for setprecision
 
 uint64_t UnitTest::random_seed = 1;
 
@@ -1263,7 +1265,8 @@ double UnitTest::GetMschemeMatrixElement_3b(const Operator &Op, int a, int ma, i
   if (std::abs(oa.tz2 + ob.tz2 + oc.tz2 - od.tz2 - oe.tz2 - of.tz2) != 2 * Tzop)
     return 0;
 
-  if (Jop == 0 and Tzop == 0 and Pop == 0)
+//  if (Jop == 0 and Tzop == 0 and Pop == 0)
+  if (not Op.IsReduced() ) // scalar operator
   {
     if ((ma + mb + mc) != (md + me + mf))
       return 0;
@@ -1683,8 +1686,8 @@ bool UnitTest::Test_comm333_ppp_hhhss(const Operator &X, const Operator &Y)
 /// THIS IS SO SLOW....
 bool UnitTest::Test_comm233_phss(const Operator &X, const Operator &Y)
 {
-  //  return Test_against_ref_impl(X,Y,  Commutator::comm233_phss,  ReferenceImplementations::comm233_phss,  "comm233_phss");
-  return Test_against_ref_impl(X, Y, Commutator::comm233_phss, Commutator::comm233_phss, "comm233_phss");
+    return Test_against_ref_impl(X,Y,  Commutator::comm233_phss,  ReferenceImplementations::comm233_phss,  "comm233_phss");
+ // return Test_against_ref_impl(X, Y, Commutator::comm233_phss, Commutator::comm233_phss, "comm233_phss");
 }
 
 bool UnitTest::Test_comm232ss(const Operator &X, const Operator &Y)
@@ -4616,7 +4619,7 @@ bool UnitTest::Mscheme_Test_comm233_pp_hhss(const Operator &X, const Operator &Y
 //                           - Xbian Yajkbml + Ybian Xajkbml  +  Xbjan Yaikbml - Ybjan Xaikbml  +  Xbkan Yajibml - Ybkan Xajibml  ]
 //
 //
-bool UnitTest::Mscheme_Test_comm233_phss(const Operator &X, const Operator &Y) // test not yet implemented
+bool UnitTest::Mscheme_Test_comm233_phss(const Operator &X, const Operator &Y) 
 {
   std::cout << __func__ << std::endl;
   Operator Z_J(Y);
@@ -4624,12 +4627,19 @@ bool UnitTest::Mscheme_Test_comm233_phss(const Operator &X, const Operator &Y) /
   Z_J.Erase();
   Z_J.ThreeBody.Allocate();
 
-  Commutator::comm233_phss(X, Y, Z_J);
+//  Commutator::comm233_phss(X, Y, Z_J);
+  ReferenceImplementations::comm233_phss(X, Y, Z_J);
+//  {
+//    Operator Ycp(Y);
+//    Ycp.MakeReduced();
+//    Z_J.MakeReduced();
+//    Commutator::comm233_phst(X,Ycp,Z_J);
+//  }
 
-  if (Z_J.IsHermitian())
-    Z_J.Symmetrize();
-  else if (Z_J.IsAntiHermitian())
-    Z_J.AntiSymmetrize();
+//  if (Z_J.IsHermitian())
+//    Z_J.Symmetrize();
+//  else if (Z_J.IsAntiHermitian())
+//    Z_J.AntiSymmetrize();
 
   double summed_error = 0;
   double sum_m = 0;
@@ -4666,9 +4676,11 @@ bool UnitTest::Mscheme_Test_comm233_phss(const Operator &X, const Operator &Y) /
               if (n > m)
                 continue;
               Orbit &on = X.modelspace->GetOrbit(n);
-              if ((oi.l + oj.l + ok.l + ol.l + om.l + on.l) % 2 != 0)
+//              if ((oi.l + oj.l + ok.l + ol.l + om.l + on.l) % 2 != 0)
+              if ((oi.l + oj.l + ok.l + ol.l + om.l + on.l) % 2 != Z_J.GetParity() )
                 continue;
-              if ((oi.tz2 + oj.tz2 + ok.tz2) != (ol.tz2 + om.tz2 + on.tz2))
+//              if ((oi.tz2 + oj.tz2 + ok.tz2) != (ol.tz2 + om.tz2 + on.tz2))
+              if ( std::abs( (oi.tz2 + oj.tz2 + ok.tz2) - (ol.tz2 + om.tz2 + on.tz2)) != 2*Z_J.GetTRank() )
                 continue;
 
               //              if ( not (i==5 and j==4 and k==0 and l==5 and m==4 and n==0) ) continue;
@@ -4784,16 +4796,16 @@ bool UnitTest::Mscheme_Test_comm233_phss(const Operator &X, const Operator &Y) /
                                   // xijalmn = xaijblm = xajibml
                                   //                          z_ijklmn -= occfactor * (xbkan * yajibml - ybkan * xajibml);
                                   //                           z_ijklmn -= occfactor * (xbkan * yijalmb - ybkan*xijalmb);
-                                  double dz = -occfactor * 1 * (xbkan * yijalmb - ybkan * xijalmb);
-                                  dz += occfactor * 1 * (xbian * ykjalmb - ybian * xkjalmb);
-                                  dz += occfactor * 1 * (xbjan * yikalmb - ybjan * xikalmb);
-                                  dz += occfactor * 1 * (xbkal * yijanmb - ybkal * xijanmb);
-                                  dz += occfactor * 1 * (xbkam * yijalnb - ybkam * xijalnb);
-                                  dz -= occfactor * 1 * (xbial * ykjanmb - ybial * xkjanmb);
-                                  dz -= occfactor * 1 * (xbjal * yikanmb - ybjal * xikanmb);
-                                  dz -= occfactor * 1 * (xbiam * ykjalnb - ybiam * xkjalnb);
-                                  dz -= occfactor * 1 * (xbjam * yikalnb - ybjam * xikalnb);
-                                  z_ijklmn += dz;
+                                  double dz = -(xbkan * yijalmb - ybkan * xijalmb);
+                                        dz +=  (xbian * ykjalmb - ybian * xkjalmb); // Pik
+                                        dz +=  (xbjan * yikalmb - ybjan * xikalmb); // Pjk
+                                        dz +=  (xbkal * yijanmb - ybkal * xijanmb); // Pln
+                                        dz +=  (xbkam * yijalnb - ybkam * xijalnb); // Pmn
+                                        dz -=  (xbial * ykjanmb - ybial * xkjanmb); // Pik Pln
+                                        dz -=  (xbjal * yikanmb - ybjal * xikanmb); // Pjk Pln
+                                        dz -=  (xbiam * ykjalnb - ybiam * xkjalnb); // Pik Pmn
+                                        dz -=  (xbjam * yikalnb - ybjam * xikalnb); // Pjk Pmn
+                                  z_ijklmn += occfactor * dz;
 
                                 } // for m_b
                               } // for m_a
@@ -6021,18 +6033,25 @@ bool UnitTest::TestFactorizedDoubleCommutators( Operator& eta, Operator& H )
   int particle_rank = 2;
   int hEta = eta.IsHermitian() ? 1 : -1;
   int hH = H.IsHermitian() ? 1 : -1;
-  int hZ = -hEta * hH;
+  int hZ = hH;
+//  int hZ = hEta * hEta * hH;
 
 //  Operator eta = RandomOp(*modelspace, jrank, tz, parity, particle_rank, -1);
 //  Operator H = RandomOp(*modelspace, jrank, tz, parity, particle_rank, +1);
-  Operator OpOut_direct(*modelspace, jrank, tz, parity, 3);
+  Operator OpOut_intermediate(*modelspace, jrank, tz, parity, 3);
+  Operator OpOut_direct(*modelspace, jrank, tz, parity, 2);
   Operator OpOut_factorized(*modelspace, jrank, tz, parity, 2);
   if ( hZ < 0 )
   {
     OpOut_direct.SetAntiHermitian();
     OpOut_factorized.SetAntiHermitian();
   }
-  OpOut_direct.ThreeBody.SetMode("pn");
+  if ( -1*hEta*hH < 0 )
+  {
+    OpOut_intermediate.SetAntiHermitian();
+  }
+//  OpOut_direct.ThreeBody.SetMode("pn");
+  OpOut_intermediate.ThreeBody.SetMode("pn");
   if (OpOut_direct.IsReduced() )
   {
      OpOut_direct.MakeNotReduced();
@@ -6041,6 +6060,10 @@ bool UnitTest::TestFactorizedDoubleCommutators( Operator& eta, Operator& H )
   {
      OpOut_factorized.MakeNotReduced();
   }
+  if (OpOut_intermediate.IsReduced() )
+  {
+     OpOut_intermediate.MakeNotReduced();
+  }
 
   if ( eta.IsReduced() or H.IsReduced() or OpOut_direct.IsReduced() or OpOut_factorized.IsReduced())
   {
@@ -6048,11 +6071,14 @@ bool UnitTest::TestFactorizedDoubleCommutators( Operator& eta, Operator& H )
                << eta.IsReduced() << " " << H.IsReduced() << " " << OpOut_direct.IsReduced() << " " << OpOut_factorized.IsReduced() 
                << std::endl;
   }
-  Commutator::comm223ss(eta, H, OpOut_direct);
-  Commutator::comm231ss(eta, OpOut_direct, OpOut_direct);
-  Commutator::comm232ss(eta, OpOut_direct, OpOut_direct);
+//  Commutator::comm223ss(eta, H, OpOut_direct);
+//  Commutator::comm231ss(eta, OpOut_direct, OpOut_direct);
+//  Commutator::comm232ss(eta, OpOut_direct, OpOut_direct);
+  Commutator::comm223ss(eta, H, OpOut_intermediate);
+  Commutator::comm231ss(eta, OpOut_intermediate, OpOut_direct);
+  Commutator::comm232ss(eta, OpOut_intermediate, OpOut_direct);
 
-  OpOut_direct.ThreeBody.Erase();
+//  OpOut_direct.ThreeBody.Erase();
   // OpOut_factorized.EraseOneBody();  
   // OpOut_factorized.TwoBody.Erase();
 
@@ -7885,13 +7911,13 @@ bool UnitTest::Mscheme_Test_comm233_phst(const Operator &X, const Operator &Y)
   Z_J.ThreeBody.Erase();
 
   Operator Y_copy(Y);
-  if (Lambda == 0)
+  if (Lambda == 0 and (not Y.IsReduced()) )
   {
     Y_copy.MakeReduced();
     Z_J.MakeReduced();
   }
   ReferenceImplementations::comm233_phst(X, Y_copy, Z_J);
-  if (Lambda == 0)
+  if (Lambda == 0 and (not Y.IsReduced()) )
   {
     // Y_copy.MakeNotReduced();
     Z_J.MakeNotReduced();
@@ -8601,6 +8627,28 @@ bool UnitTest::Test3BGenerator( Operator& H, Operator& Hdenom)
 }
 
 
+bool UnitTest::TestMBPT4( Operator& H )
+{
+   bool pass = true;
+   H.modelspace->PreCalculateSixJ();
+   HFMBPT hf(H);;
+   for (int i=1;i<=39;i++)
+   {
+      
+     double term_ref = ReferenceImplementations::GetMP4_term(  H, i);
+     double term_opt = hf.GetMP4_term(  H, i);
+     double diff = term_ref - term_opt;
+        std::cout << "Diagram " << i << "  ref = " << term_ref << "  opt = " << term_opt << "  diff = " << diff << std::endl;
+     if (std::abs(diff)>1e-6)
+     {
+        std::cout << " !!!!  FAIL !!!! " << std::endl;
+        pass = false;
+     }
+
+   }
+
+   return pass;
+}
 
 
 

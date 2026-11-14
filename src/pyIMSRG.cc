@@ -75,7 +75,8 @@ PYBIND11_MODULE(pyIMSRG, m)
 
       py::class_<ThreeBodyChannel>(m, "ThreeBodyChannel")
           .def(py::init<>())
-          .def("GetNumber3bKets", &ThreeBodyChannel::GetNumber3bKets)
+          .def("GetNumberKets", &ThreeBodyChannel::GetNumberKets)
+//          .def("GetNumber3bKets", &ThreeBodyChannel::GetNumber3bKets)
           .def("GetLocalIndex", &ThreeBodyChannel::GetLocalIndex, py::arg("p"), py::arg("q"), py::arg("r"), py::arg("Jpq"))
           .def("GetKet", [](ThreeBodyChannel &self, int i)
                { return self.GetKet(i); })
@@ -204,6 +205,7 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("GetTwoBodyDimension", &Operator::GetTwoBodyDimension)
           .def("ScaleOneBody", &Operator::ScaleOneBody)
           .def("ScaleTwoBody", &Operator::ScaleTwoBody)
+          .def("EraseZeroBody", [](Operator& self) {self.ZeroBody=0;} )
           .def("EraseOneBody", &Operator::EraseOneBody)
           .def("EraseTwoBody", &Operator::EraseTwoBody)
           .def("EraseThreeBody", &Operator::EraseThreeBody)
@@ -468,6 +470,7 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("GetMP3_pp", &HFMBPT::GetMP3_pp)
           .def("GetMP3_hh", &HFMBPT::GetMP3_hh)
           .def("GetMP3_ph", &HFMBPT::GetMP3_ph)
+          .def("GetMP4_term", &HFMBPT::GetMP4_term)
           .def("SetVVApprox", &HFMBPT::SetVVApprox )
           .def("SetVVGenerator_type", &HFMBPT::SetVVGenerator_type )
           .def("SetVVGenerator_partitioning", &HFMBPT::SetVVGenerator_partitioning )
@@ -757,6 +760,8 @@ PYBIND11_MODULE(pyIMSRG, m)
        ReferenceImplementations.def("comm333_ppp_hhhst", &ReferenceImplementations::comm333_ppp_hhhst);  
        ReferenceImplementations.def("comm333_pph_hhpst", &ReferenceImplementations::comm333_pph_hhpst); 
        ReferenceImplementations.def("TriplesGuess", &ReferenceImplementations::TriplesGuess);
+//       ReferenceImplementations.def("TestMBPT6", &ReferenceImplementations::TestMBPT6);
+//       ReferenceImplementations.def("TestMBPT6_2", &ReferenceImplementations::TestMBPT6_2);
 
 
       py::class_<RPA>(m, "RPA")
@@ -877,6 +882,7 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("GetMschemeMatrixElement_2b", &UnitTest::GetMschemeMatrixElement_2b)  
           .def("GetMschemeMatrixElement_3b", &UnitTest::GetMschemeMatrixElement_3b) 
           .def("Test3BGenerator",&UnitTest::Test3BGenerator)
+          .def("TestMBPT4",&UnitTest::TestMBPT4)
           ;
 
 
