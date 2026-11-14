@@ -105,24 +105,21 @@ namespace M0nu
 
   double hT_AA(double qsq)
   {
-    return hGT_AA(qsq); // Does this also need a factor of -1? See the T_AP, T_PP and T_MM functions below. Maybe not see Vincenzo paper
+    return hGT_AA(qsq);
   }
 
   double hT_AP(double qsq)
   {
-    //extra factor of -1 from fourier trans r -> p space
     return hGT_AP(qsq);
   }
 
   double hT_PP(double qsq)
   {
-    //extra factor of -1 from fourier trans r -> p space
     return hGT_PP(qsq);
   }
 
   double hT_MM(double qsq)
   {
-    // extra factor of -1 from fourier trans r -> p space
     return -hGT_MM(qsq)/2;
   }
 
@@ -2053,7 +2050,7 @@ namespace M0nu
           int eps_cd = 2*nc + lc + 2*nd + ld; // for conservation of energy in the Moshinsky brackets
           double sumLS = 0; // for the Bessel's Matrix Elemets (BMEs)
           double sumLSas = 0; // (anti-symmetric part)
-          for (int S=0; S<=1; S++) // sum over total spin...
+          for (int S=0; S<=0; S++) // sum over only S=0 configuration to match the contact. Differences can be attributed to regulator artifacts
           {
             int L_min = std::max(std::max(abs(la-lb),abs(lc-ld)), abs(J-S));
             int L_max = std::min(std::min(la+lb,lc+ld),J+S);
